@@ -37,6 +37,7 @@
 #endif // __linux__
 
 // other clocks
+#include "interface/absl_time.h"
 #include "interface/syscall_clock_gettime.h"
 #include "interface/posix_clock.h"
 #include "interface/posix_clock_gettime.h"
@@ -157,6 +158,8 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
   timers.push_back(new Benchmark<clock_times_realtime_f>("times() (wall-clock time) (using fixed math)"));
   timers.push_back(new Benchmark<clock_times_cputime_f>("times() (cpu time) (using fixed math)"));
 #endif // defined __x86_64__ or defined __i386__
+
+  timers.push_back(new Benchmark<absl_time>("abseil GetCurrentTimeNanos"));
 
   // POSIX clock
   timers.push_back(new Benchmark<clock_clock>("clock()"));
