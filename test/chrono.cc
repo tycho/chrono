@@ -150,11 +150,11 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
   timers.push_back(new Benchmark<clock_times_cputime>("times() (cpu time)"));
   timers.push_back(new Benchmark<clock_times_realtime_d>("times() (wall-clock time) (using double)"));
   timers.push_back(new Benchmark<clock_times_cputime_d>("times() (cpu time) (using double)"));
-#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
+#if defined(CHRONO_HAVE_TSC)
 // 128-bit wide int is only available on x86
   timers.push_back(new Benchmark<clock_times_realtime_f>("times() (wall-clock time) (using fixed math)"));
   timers.push_back(new Benchmark<clock_times_cputime_f>("times() (cpu time) (using fixed math)"));
-#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
+#endif // defined(CHRONO_HAVE_TSC)
 #endif
 
   // abseil time
@@ -195,7 +195,7 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
     timers.push_back(new Benchmark<mach_thread_info_clock>("thread_info(mach_thread_self(), THREAD_BASIC_INFO, ...)"));
 #endif // HAVE_MACH_THREAD_INFO_CLOCK
 
-#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
+#if defined(CHRONO_HAVE_TSC)
 // TSC is only available on x86
   
   // read TSC clock frequency
@@ -210,8 +210,10 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
     timers.push_back(new Benchmark<clock_rdtsc_lfence>("LFENCE; RDTSC (" + tsc_freq + ") (using nanoseconds)"));
   if (clock_rdtsc_mfence::is_available)
     timers.push_back(new Benchmark<clock_rdtsc_mfence>("MFENCE; RDTSC (" + tsc_freq + ") (using nanoseconds)"));
+#ifdef CHRONO_HAVE_RDTSCP
   if (clock_rdtscp::is_available)
     timers.push_back(new Benchmark<clock_rdtscp>("RDTSCP (" + tsc_freq + ") (using nanoseconds)"));
+#endif
   if (clock_serialising_rdtsc::is_available)
     timers.push_back(new Benchmark<clock_serialising_rdtsc>("run-time selected serialising RDTSC (" + tsc_freq + ") (using nanoseconds)"));
   // x86 DST-based clock (native)
@@ -221,12 +223,14 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
     timers.push_back(new Benchmark<native::clock_rdtsc_lfence>("LFENCE; RDTSC (" + tsc_freq + ") (native)"));
   if (native::clock_rdtsc_mfence::is_available)
     timers.push_back(new Benchmark<native::clock_rdtsc_mfence>("MFENCE; RDTSC (" + tsc_freq + ") (native)"));
+#ifdef CHRONO_HAVE_RDTSCP
   if (native::clock_rdtscp::is_available)
     timers.push_back(new Benchmark<native::clock_rdtscp>("RDTSCP (" + tsc_freq + ") (native)"));
+#endif
   if (native::clock_serialising_rdtsc::is_available)
     timers.push_back(new Benchmark<native::clock_serialising_rdtsc>("run-time selected serialising RDTSC (" + tsc_freq + ") (native)"));
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(CHRONO_HAVE_TSC)
 
 #ifdef HAVE_BOOST_TIMER
   // boost timer clocks

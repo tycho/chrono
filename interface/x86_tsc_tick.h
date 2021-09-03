@@ -1,6 +1,3 @@
-#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
-// TSC is only available on x86
-
 #ifndef x86_tsc_tick_h
 #define x86_tsc_tick_h
 
@@ -97,5 +94,3 @@ struct tsc_tick {
 
 
 #endif // x86_tsc_tick_h
-
-#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

@@ -1,38 +1,29 @@
-#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
-// TSC is only available on x86
-
 #ifndef x86_tsc_h
 #define x86_tsc_h
 
 #include <cstdint>
 
-#if defined __clang__
-// clang does not define the __rdtsc and __rdtscp intrinsic, although it does
-// define __builtin_readcyclecounter() which is a likely replacement for __rdtsc()
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64) || (defined(_WIN32) && defined(_M_ARM64))
+#define CHRONO_HAVE_TSC
+#define CHRONO_HAVE_RDTSCP
+#endif
 
-extern inline uint64_t rdtsc(void)
-{
-    uint32_t eax, edx;
-    asm("rdtsc" : "=a" (eax), "=d" (edx));
-    return ((uint64_t) edx << 32) | (uint64_t) eax;
-}
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
+#define CHRONO_HAVE_X86_INTRINSICS
+#endif
 
-extern inline uint64_t rdtscp(uint32_t *aux)
-{
-    uint32_t eax, edx;
-    uint64_t rcx;
-    asm("rdtscp" : "=a" (eax), "=d" (edx), "=c" (rcx));
-    *aux = rcx;
-    return ((uint64_t) edx << 32) | (uint64_t) eax;
-}
-
-#elif defined __GNUC__
+#ifdef CHRONO_HAVE_TSC
+#if defined __GNUC__
 // GCC and ICC provide intrinsics for rdtsc and rdtscp
 #include <x86intrin.h>
 
 extern inline uint64_t rdtsc(void)
 {
+#if __has_builtin(__builtin_readcyclecounter)
+    return __builtin_readcyclecounter();
+#else
     return __rdtsc();
+#endif
 }
 
 extern inline uint64_t rdtscp(uint32_t *aux)
@@ -42,6 +33,23 @@ extern inline uint64_t rdtscp(uint32_t *aux)
 #elif defined(_MSC_VER)
 #include <intrin.h>
 
+#ifdef _M_ARM64
+#pragma intrinsic(_ReadStatusReg)
+
+#ifndef ARM64_CNTVCT
+#define ARM64_CNTVCT            ARM64_SYSREG(3,3,14, 0,2)  // Generic Timer counter register
+#endif
+#ifndef ARM64_PMCCNTR_EL0
+#define ARM64_PMCCNTR_EL0       ARM64_SYSREG(3,3, 9,13,0)  // Cycle Count Register [CP15_PMCCNTR]
+#endif
+
+extern inline uint64_t rdtsc(void)
+{
+    return _ReadStatusReg( ARM64_CNTVCT );
+}
+
+#undef CHRONO_HAVE_RDTSCP
+#else
 #pragma intrinsic(__rdtsc)
 #pragma intrinsic(__rdtscp)
 
@@ -54,6 +62,7 @@ extern inline uint64_t rdtscp(uint32_t *aux)
 {
     return __rdtscp(aux);
 }
+#endif
 #else
 #  error "Unsupported compiler"
 #endif // __clang__ / __GNUC__
@@ -79,7 +88,6 @@ extern uint64_t serialising_rdtsc(void);
 extern uint64_t (*serialising_rdtsc)(void);
 
 #endif // IFUNC support
+#endif
 
 #endif // x86_tsc_h
-
-#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

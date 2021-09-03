@@ -1,6 +1,3 @@
-#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
-// TSC is only available on x86
-
 // C++ standard headers
 #include <chrono>
 #include <thread>
@@ -11,18 +8,24 @@
 #include <unistd.h>
 #endif
 
+#include "interface/x86_tsc.h"
+
+#ifdef CHRONO_HAVE_TSC
+
 // for rdtsc, rdtscp, lfence, mfence, cpuid
+#ifdef CHRONO_HAVE_X86_INTRINSICS
 #include <emmintrin.h>
+#endif
 #if !defined(_MSC_VER)
 #include <cpuid.h>
+#else
+#include <windows.h>
 #endif
 
 #ifdef __linux__
 #include <linux/version.h>
 #include <sys/prctl.h>
 #endif // __linux__
-
-#include "interface/x86_tsc.h"
 
 
 // CPUID, EAX = 0x01, EDX values
@@ -40,6 +43,7 @@
 #define bit_InvariantTSC    (1 << 8)
 #endif
 
+#ifdef CHRONO_HAVE_X86_INTRINSICS
 #ifdef _MSC_VER
 static inline int __get_cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
@@ -79,6 +83,17 @@ bool has_invariant_tsc() {
   else
     return false;
 }
+#else
+#ifdef CHRONO_HAVE_TSC
+bool has_tsc() { return true; }
+bool has_rdtscp() { return false; }
+bool has_invariant_tsc() { return true; }
+#else
+bool has_tsc() { return false; }
+bool has_rdtscp() { return false; }
+bool has_invariant_tsc() { return false; }
+#endif
+#endif
 
 // Check if the RDTSC and RDTSCP instructions are allowed in user space.
 // This is controlled by the x86 control register 4, bit 4 (CR4.TSD), but that is only readable by the kernel.
@@ -151,21 +166,29 @@ double calibrate_tsc_hz() {
 // new processors can use rdtscp;
 uint64_t serialising_rdtscp(void)
 {
+#ifdef CHRONO_HAVE_RDTSCP
     unsigned int id;
     return rdtscp(& id);
+#else
+    return 0;
+#endif
 }
 
 // older Intel processors can use lfence; rdtsc;
 uint64_t serialising_rdtsc_lfence(void)
 {
+#ifdef CHRONO_HAVE_X86_INTRINSICS
     _mm_lfence();
+#endif
     return rdtsc();
 }
 
 // older AMD processors can use mfence; rdtsc;
 uint64_t serialising_rdtsc_mfence(void)
 {
+#ifdef CHRONO_HAVE_X86_INTRINSICS
     _mm_mfence();
+#endif
     return rdtsc();
 }
 
@@ -197,6 +220,7 @@ extern "C" {
       return serialising_rdtscp;
 
     if (has_tsc()) {
+#ifdef CHRONO_HAVE_X86_INTRINSICS
       // if the TSC is available, chck the processor vendor
       unsigned int eax, ebx, ecx, edx;
       __get_cpuid(0x00, & eax, & ebx, & ecx, & edx);
@@ -207,6 +231,7 @@ extern "C" {
         // for AMD processors, MFENCE can be used as a serialising instruction before RDTSC
         return serialising_rdtsc_mfence;
       else
+#endif
         // for other processors, assume that MFENCE can be used as a serialising instruction before RDTSC
         return serialising_rdtsc_mfence;
     }
@@ -228,4 +253,4 @@ uint64_t (*serialising_rdtsc)(void) = serialising_rdtsc_resolver();
 
 #endif // IFUNC support
 
-#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
+#endif

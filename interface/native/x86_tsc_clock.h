@@ -1,14 +1,8 @@
-#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
-// TSC is only available on x86
-
 #ifndef native_x86_tsc_clock_h
 #define native_x86_tsc_clock_h
 
 // C++ standard headers
 #include <chrono>
-
-// for rdtscp, rdtscp, lfence, mfence
-#include <emmintrin.h>
 
 #include "interface/x86_tsc.h"
 #include "interface/x86_tsc_tick.h"
@@ -52,7 +46,11 @@ namespace native {
 
     static time_point now() noexcept
     {
+#ifdef CHRONO_HAVE_X86_INTRINSICS
       _mm_lfence();
+#elif defined(_M_ARM64)
+      __dmb(_ARM64_BARRIER_SY);
+#endif
       rep        ticks = rdtsc();
       duration   d(ticks);
       time_point t(d);
@@ -75,7 +73,11 @@ namespace native {
 
     static time_point now() noexcept
     {
+#ifdef CHRONO_HAVE_X86_INTRINSICS
       _mm_mfence();
+#elif defined(_M_ARM64)
+      __dmb(_ARM64_BARRIER_SY);
+#endif
       rep        ticks = rdtsc();
       duration   d(ticks);
       time_point t(d);
@@ -84,6 +86,7 @@ namespace native {
   };
 
 
+#ifdef CHRONO_HAVE_RDTSCP
   // TSC-based clock with native duration, using rdtscp as serialising instruction
   struct clock_rdtscp
   {
@@ -105,6 +108,7 @@ namespace native {
       return t;
     }
   };
+#endif
 
 
   // TSC-based clock, determining at run-time the best strategy to serialise the reads from the TSC
@@ -132,5 +136,3 @@ namespace native {
 } // namespace native
 
 #endif // native_x86_tsc_clock_h
-
-#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

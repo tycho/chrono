@@ -12,6 +12,8 @@
 #include <stdexcept>
 #include <chrono>
 
+#include "interface/native/native.h"
+
 // std chrono types
 template <class Rep, class Period>
 double to_seconds(std::chrono::duration<Rep, Period> duration) {
