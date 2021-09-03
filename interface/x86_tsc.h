@@ -28,7 +28,7 @@ extern inline uint64_t rdtscp(uint32_t *aux)
 
 #elif defined __GNUC__
 // GCC and ICC provide intrinsics for rdtsc and rdtscp
-#include <emmintrin.h>
+#include <x86intrin.h>
 
 extern inline uint64_t rdtsc(void)
 {
