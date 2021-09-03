@@ -4,6 +4,12 @@
 #include <unistd.h>
 #endif
 
+// HACK: sysconf doesn't exist on MinGW, so just report that all the timers are
+// present.
+#ifdef __MINGW32__
+#define sysconf(x) 1
+#endif
+
 #ifdef HAVE_POSIX_CLOCK_REALTIME
 const bool clock_gettime_realtime::is_available = (sysconf(_SC_TIMERS) > 0);
 #endif // HAVE_POSIX_CLOCK_REALTIME

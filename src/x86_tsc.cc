@@ -13,6 +13,9 @@
 
 // for rdtsc, rdtscp, lfence, mfence, cpuid
 #include <emmintrin.h>
+#if !defined(_MSC_VER)
+#include <cpuid.h>
+#endif
 
 #ifdef __linux__
 #include <linux/version.h>
