@@ -52,11 +52,7 @@
 #include "interface/x86_tsc_clock.h"
 #include "interface/boost_timer.h"
 #include "interface/tbb_tick_count.h"
-
-#ifndef __clang__
-// CLANG does not support OpenMP
 #include "interface/omp_get_wtime.h"
-#endif // ! __clang__
 
 #include "interface/native/mach_absolute_time.h"
 #include "interface/native/x86_tsc_clock.h"
@@ -254,10 +250,8 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
   timers.push_back(new Benchmark<clock_tbb_tick_count>("tbb::tick_count"));
 #endif // HAVE_TBB
 
-#ifndef __clang__
   // OpenMP timer
   timers.push_back(new Benchmark<clock_omp_get_wtime>("omp_get_wtime"));
-#endif // ! __clang__
 }
 
 
