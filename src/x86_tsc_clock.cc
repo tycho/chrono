@@ -1,4 +1,4 @@
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // TSC is only available on x86
 
 #include "interface/x86_tsc.h"
@@ -19,4 +19,4 @@ const bool clock_rdtscp::is_steady                  = has_invariant_tsc();
 const bool clock_serialising_rdtsc::is_available    = has_tsc() and tsc_allowed();
 const bool clock_serialising_rdtsc::is_steady       = has_invariant_tsc();
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

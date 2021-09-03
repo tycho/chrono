@@ -1,4 +1,4 @@
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // TSC is only available on x86
 
 #include "interface/x86_tsc.h"
@@ -23,4 +23,4 @@ namespace native {
 
 } // namespace native
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

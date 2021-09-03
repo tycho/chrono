@@ -1,16 +1,18 @@
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // TSC is only available on x86
 
 // C++ standard headers
 #include <chrono>
+#include <thread>
 #include <cmath>
 
 // for usleep
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 // for rdtsc, rdtscp, lfence, mfence, cpuid
-#include <x86intrin.h>
-#include <cpuid.h>
+#include <emmintrin.h>
 
 #ifdef __linux__
 #include <linux/version.h>
@@ -35,6 +37,18 @@
 #define bit_InvariantTSC    (1 << 8)
 #endif
 
+#ifdef _MSC_VER
+static inline int __get_cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
+{
+    int out[4];
+    __cpuid(out, leaf);
+    *eax = out[0];
+    *ebx = out[1];
+    *ecx = out[2];
+    *edx = out[3];
+    return 1;
+}
+#endif
 
 // check if the processor has a TSC (Time Stamp Counter) and supports the RDTSC instruction
 bool has_tsc() {
@@ -73,7 +87,7 @@ bool has_invariant_tsc() {
 #endif // __linux__
 
 bool tsc_allowed() {
-#if defined __linux__ and defined _HAS_PR_TSC_ENABLE
+#if defined __linux__ && defined _HAS_PR_TSC_ENABLE
     int tsc_val = 0;
     prctl(PR_SET_TSC, PR_TSC_ENABLE);
     prctl(PR_GET_TSC, & tsc_val);
@@ -85,10 +99,19 @@ bool tsc_allowed() {
 
 #undef _HAS_PR_TSC_ENABLE
 
+static inline void spin_for(uint32_t usec)
+{
+  uint32_t elapsed;
+  auto startTime = std::chrono::high_resolution_clock::now();
+  do {
+      auto nowTime = std::chrono::high_resolution_clock::now();
+      elapsed = std::chrono::duration_cast<std::chrono::microseconds>(nowTime - startTime).count();
+  } while (elapsed < usec);
+}
 
 // calibrate TSC with respect to std::chrono::high_resolution_clock
 double calibrate_tsc_hz() {
-  if (not has_tsc() or not tsc_allowed())
+  if (!has_tsc() || !tsc_allowed())
     return 0;
 
   constexpr unsigned int sample_size = 1000;        // 1000 samples
@@ -98,7 +121,7 @@ double calibrate_tsc_hz() {
 
   auto reference = std::chrono::high_resolution_clock::now();
   for (unsigned int i = 0; i < sample_size; ++i) {
-    usleep(sleep_time);
+    spin_for(sleep_time);
     ticks[i] = rdtsc();
     times[i] = std::chrono::duration_cast<std::chrono::duration<double>>( std::chrono::high_resolution_clock::now() - reference ).count();
   }
@@ -163,7 +186,7 @@ extern "C" {
 
   static uint64_t (*serialising_rdtsc_resolver(void))(void)
   {
-    if (not tsc_allowed())
+    if (!tsc_allowed())
       return serialising_rdtsc_unimplemented;
 
     if (has_rdtscp())
@@ -174,10 +197,10 @@ extern "C" {
       // if the TSC is available, chck the processor vendor
       unsigned int eax, ebx, ecx, edx;
       __get_cpuid(0x00, & eax, & ebx, & ecx, & edx);
-      if (ebx == _("Genu") and edx == _("ineI") and ecx == _("ntel"))
+      if (ebx == _("Genu") && edx == _("ineI") && ecx == _("ntel"))
         // for Intel processors, LFENCE can be used as a serialising instruction before RDTSC
         return serialising_rdtsc_lfence;
-      else if (ebx == _("Auth") and edx == _("enti") and ecx == _("cAMD"))
+      else if (ebx == _("Auth") && edx == _("enti") && ecx == _("cAMD"))
         // for AMD processors, MFENCE can be used as a serialising instruction before RDTSC
         return serialising_rdtsc_mfence;
       else
@@ -192,7 +215,7 @@ extern "C" {
 
 // IFUNC support requires GCC >= 4.6.0 and GLIBC >= 2.11.1
 #if ( defined __GNUC__ && (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) ) \
-  and ( defined __GLIBC__ && (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 11) )
+  && ( defined __GLIBC__ && (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 11) )
 
 uint64_t serialising_rdtsc(void) __attribute__((ifunc("serialising_rdtsc_resolver"))) __attribute__((externally_visible));
 
@@ -202,4 +225,4 @@ uint64_t (*serialising_rdtsc)(void) = serialising_rdtsc_resolver();
 
 #endif // IFUNC support
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

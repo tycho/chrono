@@ -29,7 +29,13 @@
 #endif // HAVE_TBB
 
 // for uname
+#ifndef _WIN32
 #include <sys/utsname.h>
+#else
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 #ifdef __linux__
 // for gnu_get_libc_version
@@ -63,13 +69,7 @@
 void init_timers(std::vector<BenchmarkBase *> & timers) 
 {
   // std::chrono timers
-#if __clang__ || GCC_VERSION >= 40700
-  // C++11 clock name
   timers.push_back(new Benchmark<std::chrono::steady_clock>("std::chrono::steady_clock"));
-#else
-  // pre-C++11 clock name
-  timers.push_back(new Benchmark<std::chrono::monotonic_clock>("std::chrono::monotonic_clock"));
-#endif
   timers.push_back(new Benchmark<std::chrono::system_clock>("std::chrono::system_clock"));
   timers.push_back(new Benchmark<std::chrono::high_resolution_clock>("std::chrono::high_resolution_clock"));
 
@@ -142,29 +142,36 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
 #endif // HAVE_POSIX_CLOCK_THREAD_CPUTIME_ID
 
   // POSIX gettimeofday
+#ifdef HAVE_GETTIMEOFDAY
   timers.push_back(new Benchmark<clock_gettimeofday>("gettimeofday()"));
+#endif
 
   // POSIX times
+#if !defined(_WIN32)
   timers.push_back(new Benchmark<clock_times_realtime>("times() (wall-clock time)"));
   timers.push_back(new Benchmark<clock_times_cputime>("times() (cpu time)"));
   timers.push_back(new Benchmark<clock_times_realtime_d>("times() (wall-clock time) (using double)"));
   timers.push_back(new Benchmark<clock_times_cputime_d>("times() (cpu time) (using double)"));
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // 128-bit wide int is only available on x86
   timers.push_back(new Benchmark<clock_times_realtime_f>("times() (wall-clock time) (using fixed math)"));
   timers.push_back(new Benchmark<clock_times_cputime_f>("times() (cpu time) (using fixed math)"));
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
+#endif
 
+  // abseil time
   timers.push_back(new Benchmark<absl_time>("abseil GetCurrentTimeNanos"));
 
   // POSIX clock
   timers.push_back(new Benchmark<clock_clock>("clock()"));
 
   // POSIX getrusage
+#ifdef HAVE_GETRUSAGE
   timers.push_back(new Benchmark<clock_getrusage_self>("getrusage(RUSAGE_SELF)"));
 #ifdef HAVE_POSIX_CLOCK_GETRUSAGE_THREAD
   timers.push_back(new Benchmark<clock_getrusage_thread>("getrusage(RUSAGE_THREAD)"));
 #endif // HAVE_POSIX_CLOCK_GETRUSAGE_THREAD
+#endif
 
   // MACH clock_get_time
 #ifdef HAVE_MACH_SYSTEM_CLOCK
@@ -190,7 +197,7 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
     timers.push_back(new Benchmark<mach_thread_info_clock>("thread_info(mach_thread_self(), THREAD_BASIC_INFO, ...)"));
 #endif // HAVE_MACH_THREAD_INFO_CLOCK
 
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // TSC is only available on x86
   
   // read TSC clock frequency
@@ -256,6 +263,7 @@ void init_timers(std::vector<BenchmarkBase *> & timers)
 
 
 std::string read_kernel_version() {
+#if !defined(_WIN32)
   struct utsname names;
   if (not uname(& names)) {
     std::stringstream buffer;
@@ -264,6 +272,14 @@ std::string read_kernel_version() {
   } else {
     return std::string("unknown");
   }
+#else
+    OSVERSIONINFOEXA ver;
+    ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
+    GetVersionExA((LPOSVERSIONINFOA)&ver);
+    std::stringstream buffer;
+    buffer << "Windows " << ver.dwMajorVersion << "." << ver.dwMinorVersion << " build " << ver.dwBuildNumber;
+    return buffer.str();
+#endif
 }
 
 

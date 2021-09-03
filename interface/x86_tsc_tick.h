@@ -1,4 +1,4 @@
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // TSC is only available on x86
 
 #ifndef x86_tsc_tick_h
@@ -7,6 +7,12 @@
 // C++ standard headers
 #include <chrono>
 #include <cmath>
+
+// MSVC doesn't have an __int128_t type, use abseil's version
+#ifdef _MSC_VER
+#include <absl/numeric/int128.h>
+typedef absl::int128 __int128_t;
+#endif
 
 
 // TSC ticks as clock period
@@ -58,7 +64,7 @@ struct tsc_tick {
   template <typename _ToRep, typename _ToPeriod>
   static
   typename std::enable_if<
-    not std::chrono::treat_as_floating_point<_ToRep>::value,
+    !std::chrono::treat_as_floating_point<_ToRep>::value,
     std::chrono::duration<_ToRep, _ToPeriod>>::type
   to_duration(int64_t ticks)
   {
@@ -80,7 +86,7 @@ struct tsc_tick {
   template <typename _FromRep, typename _FromPeriod>
   static
   typename std::enable_if<
-    not std::chrono::treat_as_floating_point<_FromRep>::value,
+    !std::chrono::treat_as_floating_point<_FromRep>::value,
     int64_t>::type
   from_duration(std::chrono::duration<_FromRep, _FromPeriod> d)
   {
@@ -92,4 +98,4 @@ struct tsc_tick {
 
 #endif // x86_tsc_tick_h
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

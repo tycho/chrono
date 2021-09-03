@@ -1,4 +1,4 @@
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // TSC is only available on x86
 
 #ifndef x86_tsc_clock_h
@@ -8,7 +8,7 @@
 #include <chrono>
 
 // for rdtscp, rdtscp, lfence, mfence
-#include <x86intrin.h>
+#include <emmintrin.h>
 
 // for tsc_tick, etc.
 #include "interface/x86_tsc.h"
@@ -128,4 +128,4 @@ struct clock_serialising_rdtsc
 
 #endif // x86_tsc_clock_h
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

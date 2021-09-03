@@ -5,7 +5,9 @@
 #include <chrono>
 
 // POSIX standard headers
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <time.h>
 
 // check available capabilities

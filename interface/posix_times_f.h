@@ -1,4 +1,4 @@
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // 128-bit wide int is only available on x86
 
 #ifndef posix_times_f_h
@@ -86,4 +86,4 @@ struct clock_times_realtime_f
 
 #endif // posix_times_f_h
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

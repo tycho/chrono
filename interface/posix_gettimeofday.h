@@ -4,6 +4,9 @@
 // C++ standard headers
 #include <chrono>
 
+#ifndef _WIN32
+#define HAVE_GETTIMEOFDAY 1
+
 // POSIX standard headers
 #include <sys/time.h>
 
@@ -26,5 +29,6 @@ struct clock_gettimeofday
   }
 
 };
+#endif
 
 #endif // posix_gettimeofday_h

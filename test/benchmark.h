@@ -52,7 +52,7 @@ double to_nanoseconds(native::native_duration<Rep, Period> duration) {
 }
 
 
-static constexpr unsigned int SIZE = 1000000;
+static constexpr unsigned int MEASURE_SIZE = 1000000;
 
 
 double average(std::vector<double> const & values) {
@@ -142,9 +142,9 @@ public:
   {
   }
 
-  // take SIZE measurements
+  // take MEASURE_SIZE measurements
   void sample() {
-    for (unsigned int i = 0; i < SIZE; ++i)
+    for (unsigned int i = 0; i < MEASURE_SIZE; ++i)
       values[i] = clock_type::now();
   }
 
@@ -156,12 +156,12 @@ public:
   // extract the characteristics of the timer from the measurements
   void compute() {
     // per-call overhead
-    overhead = to_seconds(stop - start) / SIZE;
+    overhead = to_seconds(stop - start) / MEASURE_SIZE;
 
     // resolution (min, median and average of the increments)
     std::vector<double> steps;
-    steps.reserve(SIZE);
-    for (unsigned int i = 0; i < SIZE-1; ++i) {
+    steps.reserve(MEASURE_SIZE);
+    for (unsigned int i = 0; i < MEASURE_SIZE-1; ++i) {
       double step = delta(values[i], values[i + 1]);
       if (step > 0)
         steps.push_back(step);
@@ -270,7 +270,7 @@ public:
   }
 
 protected:
-  time_point values[SIZE];
+  time_point values[MEASURE_SIZE];
 
 };
 

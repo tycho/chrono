@@ -1,4 +1,4 @@
-#if defined __x86_64__ or defined __i386__
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)
 // TSC is only available on x86
 
 #ifndef x86_tsc_h
@@ -28,7 +28,7 @@ extern inline uint64_t rdtscp(uint32_t *aux)
 
 #elif defined __GNUC__
 // GCC and ICC provide intrinsics for rdtsc and rdtscp
-#include <x86intrin.h>
+#include <emmintrin.h>
 
 extern inline uint64_t rdtsc(void)
 {
@@ -39,7 +39,21 @@ extern inline uint64_t rdtscp(uint32_t *aux)
 {
     return __rdtscp(aux);
 }
+#elif defined(_MSC_VER)
+#include <intrin.h>
 
+#pragma intrinsic(__rdtsc)
+#pragma intrinsic(__rdtscp)
+
+extern inline uint64_t rdtsc(void)
+{
+    return __rdtsc();
+}
+
+extern inline uint64_t rdtscp(uint32_t *aux)
+{
+    return __rdtscp(aux);
+}
 #else
 #  error "Unsupported compiler"
 #endif // __clang__ / __GNUC__
@@ -54,7 +68,7 @@ double calibrate_tsc_hz();
 
 // IFUNC support requires GCC >= 4.6.0 and GLIBC >= 2.11.1
 #if ( defined __GNUC__ && (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) ) \
-  and ( defined __GLIBC__ && (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 11) )
+  && ( defined __GLIBC__ && (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 11) )
 
 // processor specific serialising access to the TSC
 extern uint64_t serialising_rdtsc(void);
@@ -68,4 +82,4 @@ extern uint64_t (*serialising_rdtsc)(void);
 
 #endif // x86_tsc_h
 
-#endif // defined __x86_64__ or defined __i386__
+#endif // defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_AMD64)

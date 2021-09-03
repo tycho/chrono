@@ -1,6 +1,8 @@
 #ifndef posix_times_d_h
 #define posix_times_d_h
 
+#ifndef _WIN32
+
 // C++ standard headers
 #include <chrono>
 
@@ -60,5 +62,6 @@ struct clock_times_realtime_d
 
 };
 
+#endif // !defined(_WIN32)
 
 #endif // posix_times_d_h

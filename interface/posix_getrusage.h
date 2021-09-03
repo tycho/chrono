@@ -1,6 +1,9 @@
 #ifndef posix_getrusage_h
 #define posix_getrusage_h
 
+#ifndef _WIN32
+#define HAVE_GETRUSAGE 1
+
 // C++ standard headers
 #include <chrono>
 
@@ -59,5 +62,5 @@ struct clock_getrusage_thread
 
 #endif // LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
 #endif // defined(__linux__)
-
+#endif // !defined(_WIN32)
 #endif // posix_getrusage_h

@@ -1,6 +1,8 @@
 #include "interface/posix_clock_gettime.h"
 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #ifdef HAVE_POSIX_CLOCK_REALTIME
 const bool clock_gettime_realtime::is_available = (sysconf(_SC_TIMERS) > 0);

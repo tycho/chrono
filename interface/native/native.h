@@ -230,7 +230,7 @@ namespace std {
   namespace chrono {
 
     template<typename _ToDur, typename _Rep, typename _Period>
-    constexpr typename enable_if<__is_duration<_ToDur>::value, _ToDur>::type
+    constexpr typename enable_if<!native::__is_native_duration<_ToDur>::value, _ToDur>::type
     duration_cast(native::native_duration<_Rep, _Period> const & __d)
     {
       return _Period::template to_duration<typename _ToDur::rep, typename _ToDur::period>(__d.count());
